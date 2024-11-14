@@ -103,7 +103,11 @@ end
 % unimodal + multimodal
 [data1_ummm, aux_ummm, isi_ummm] = run_mgpca_ica(X, S, M, num_pc, num_iter, seed);
 
+% multimodal
+[data1_mm, aux_mm, isi_mm] = run_mgpca_gica(X, S, M, num_pc, num_iter, seed);
+
 %% save outputs
 outpath = '/Users/xli77/Documents/MSIVA/results/SIVA/subspace_struct_234111';
 save(fullfile(outpath,'um_neuroimaging.mat'),'data1_um','aux_um');
 save(fullfile(outpath,'ummm_neuroimaging.mat'),'data1_ummm','aux_ummm');
+save(fullfile(outpath,'mm_neuroimaging.mat'),'data1_mm','aux_mm');

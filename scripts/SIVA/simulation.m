@@ -81,6 +81,9 @@ num_iter = 10;
 % unimodal + multimodal
 [data1_ummm, aux_ummm, isi_ummm] = run_mgpca_ica(X, S, M, num_pc, num_iter, seed, Y, A);
 
+% multimodal
+[data1_mm, aux_mm, isi_mm] = run_mgpca_gica(X, S, M, num_pc, num_iter, seed, Y, A);
+
 %% define test subspace structure
 S1 = {[1  2], [1  2]; ...
       [3  4], [3  4]; ...
@@ -151,13 +154,18 @@ end
 % unimodal + multimodal
 [data1_ummm_s1, aux_ummm_s1, isi_ummm_s1] = run_mgpca_ica(X, S1_, M, num_pc, num_iter, seed, Y, A);
 
+% multimodal
+[data1_mm_s1, aux_mm_s1, isi_mm_s1] = run_mgpca_gica(X, S1_, M, num_pc, num_iter, seed, Y, A);
+
 %% save outputs
 rootpath = '/Users/xli77/Documents/MSIVA/results/SIVA';
 
 % outpath = 'subspace_struct_234111';
 % save(fullfile(rootpath,outpath,'um.mat'),'data1_um','isi_um','aux_um');
 % save(fullfile(rootpath,outpath,'ummm.mat'),'data1_ummm','isi_ummm','aux_ummm');
+% save(fullfile(rootpath,outpath,'mm.mat'),'data1_mm','isi_mm','aux_mm');
 
 outpath = 'subspace_struct_234111_incorrect2222211';
 save(fullfile(rootpath,outpath,'um.mat'),'data1_um_s1','isi_um_s1','aux_um_s1');
 save(fullfile(rootpath,outpath,'ummm.mat'),'data1_ummm_s1','isi_ummm_s1','aux_ummm_s1');
+save(fullfile(rootpath,outpath,'mm.mat'),'data1_mm_s1','isi_mm_s1','aux_mm_s1');
