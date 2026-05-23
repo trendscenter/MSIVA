@@ -1,11 +1,12 @@
-function [data1, aux, isi] = run_pca_ica(X, S, M, num_pc, num_iter, seed, varargin)
-% Unimodal: PCA + ICA + CO
+function [data1, aux, isi, loss, Yinit, W] = run_pca_ica(X, S, M, num_pc, num_iter, seed, run_optim, varargin)
+% Unimodal: PCA + ICA
 
 rng(seed);
 
 if ~isempty(varargin)
     Y = varargin{1};
     A = varargin{2};
+    Sgt = varargin{3};
 end
 
 ut = utils;
@@ -33,10 +34,10 @@ for mm = M
     gica1 = MISAK(w0, 1, {eye(size(H,1))}, {H}, ...
         0.5*ones(num_pc,1), ones(num_pc,1), ones(num_pc,1), ...
         gradtype, sc, preX);
-    
+
     % the whitening matrix is an identity matrix, different from the whitening matrix from PCA
     % sphering turns off PCA
-    
+
     [W1,wht] = icatb_runica(H,'weights',gica1.W{1},'ncomps',size(H,1),'sphering', 'off', 'verbose', 'off', 'posact', 'off', 'bias', 'on');
     std_W1 = std(W1*H,[],2); % Ignoring wht because Infomax run with 'sphering' 'off' --> wht = eye(comps)
     W1 = diag(pi/sqrt(3) ./ std_W1) * W1;
@@ -55,6 +56,7 @@ W = cellfun(@(w) w,whtM_all,'Un',0);
 W = cellfun(@(w, wr) wr*w,W,Wr,'Un',0);
 W = cellfun(@(w,x) diag(pi/sqrt(3) ./ std(w*x,[],2))*w,W,X,'Un',0);
 
+%%
 w0_new = ut.stackW(W(M));
 
 % Set Kotz parameters to multivariate laplace
@@ -66,6 +68,8 @@ lambda = ones(K,1);
 data1 = MISAK(w0_new, M, S, X, ...
     0.5*beta, eta, [], ...
     gradtype, sc, preX);
+
+Yinit = cat(1, data1.Y{1}, data1.Y{2});
 
 for mm = M
     W0{mm} = [eye(num_pc),zeros(num_pc,0)];
@@ -83,7 +87,7 @@ data3 = MISAK(w0_short, data1.M, data1.S, data1.Y, ...
     0.5*beta, eta, [], ...
     gradtype, false, preX); % turn off scale control
 
-% Prep starting point: optimize RE to ensure initial W is in the feasible region
+% Prep starting point
 woutW0 = data2.stackW(data2.W);
 
 % Define objective parameters and run optimization
@@ -95,39 +99,61 @@ m = 1; % Number of past gradients to use for LBFGS-B (m = 1 is equivalent to con
 N = size(X(M(1)),2); % Number of observations
 Tol = .5*N*1e-9; % Tolerance for stopping criteria
 isi = zeros(1, num_iter+1);
+loss = zeros(151, num_iter+1);
 
 % Set optimization parameters and run
 % Skip fmincon to check effect of ICA (full separation of sources, no residual correlations left)
 optprob = ut.getop(woutW0, f, c, barr, {'lbfgs' m}, Tol);
 [wout,fval,exitflag,output] = fmincon(optprob);
 
+% Export loss values
+drawnow; % Update figure immediately
+if gcf().Children(10).YLabel.String == "Function value"
+    len = length(gcf().Children(10).Children.YData);
+    loss(1:len,1) = gcf().Children(10).Children.YData;
+end
+
 % Prep and run combinatorial optimization
 aux = {data2.W; data2.objective(ut.stackW(data2.W)); data3.objective(ut.stackW(data2.W))};
 
 final_W = cell(1,2);
 for mm = M
-    final_W{mm} = data2.W{mm} * W{mm}; % data2.W is 12x12, W is 12x20k
+    final_W{mm} = data2.W{mm} * W{mm};
 end
 data1.objective(ut.stackW(final_W));
 
 if exist('A','var')
-    isi(1) = data1.MISI(A)
+    isi(1) = data1.MISI({A, Sgt})
 end
 
-for ct = 2:num_iter+1
-    data2.combinatorial_optim()
-    optprob = ut.getop(ut.stackW(data2.W), f, c, barr, {'lbfgs' m}, Tol);
-    [wout,fval,exitflag,output] = fmincon(optprob);
+%%
+aux{end+1}=data1.Y;
 
-    aux(:,ct) = {data2.W; data2.objective_(); data3.objective(ut.stackW(data2.W))};
+if run_optim
+    for ct = 2:num_iter+1
+        data2.combinatorial_optim();
+        optprob = ut.getop(ut.stackW(data2.W), f, c, barr, {'lbfgs' m}, Tol);
+        [wout,fval,exitflag,output] = fmincon(optprob);
 
-    final_W = cell(1,2);
-    for mm = M
-        final_W{mm} = data2.W{mm} * W{mm}; % data2.W is 12x12, data1.W is 12x20k
-    end
-    data1.objective(ut.stackW(final_W));
-    if exist('A','var')
-        isi(ct) = data1.MISI(A)
+        % Export loss values
+        drawnow; % Update figure immediately
+        if gcf().Children(10).YLabel.String == "Function value"
+            len = length(gcf().Children(10).Children.YData);
+            loss(1:len, ct) = gcf().Children(10).Children.YData;
+        end
+
+        aux(1:end-1,ct) = {data2.W; data2.objective_(); data3.objective(ut.stackW(data2.W))};
+
+        final_W = cell(1,2);
+        for mm = M
+            final_W{mm} = data2.W{mm} * W{mm};
+        end
+        data1.objective(ut.stackW(final_W));
+        if exist('A','var')
+            isi(ct) = data1.MISI({A, Sgt})
+        end
+
+        aux(end,ct) = {data1.Y};
     end
 end
 
@@ -135,7 +161,7 @@ end
 
 final_W = cell(1,2);
 for mm = M
-    final_W{mm} = aux{1,ix}{mm} * W{mm}; % data2.W is 12x12, data1.W is 12x20k
+    final_W{mm} = aux{1,ix}{mm} * W{mm};
 end
 data1.objective(ut.stackW(final_W));
 

@@ -1,11 +1,12 @@
-function [data1, aux, isi] = run_mgpca_ica(X, S, M, num_pc, num_iter, seed, varargin)
-% Multimodal + unimodal: MGPCA + separate ICA + CO
+function [data1, aux, isi, loss, Yinit, W] = run_mgpca_ica(X, S, M, num_pc, num_iter, seed, run_optim, varargin)
+% Multimodal + unimodal: MGPCA + separate ICA
 
 rng(seed);
 
 if ~isempty(varargin)
     Y = varargin{1};
     A = varargin{2};
+    Sgt = varargin{3};
 end
 
 ut = utils;
@@ -66,6 +67,8 @@ data1 = MISAK(w0_new, M, S, X, ...
     0.5*beta, eta, [], ...
     gradtype, sc, preX);
 
+Yinit = cat(1, data1.Y{1}, data1.Y{2});
+
 for mm = M
     W0{mm} = [eye(num_pc),zeros(num_pc,0)];
 end
@@ -94,45 +97,67 @@ m = 1; % Number of past gradients to use for LBFGS-B (m = 1 is equivalent to con
 N = size(X(M(1)),2); % Number of observations
 Tol = .5*N*1e-9; % Tolerance for stopping criteria
 isi = zeros(1, num_iter+1);
+loss = zeros(151, num_iter+1);
 
 % Set optimization parameters and run
 optprob = ut.getop(woutW0, f, c, barr, {'lbfgs' m}, Tol);
 [wout,fval,exitflag,output] = fmincon(optprob);
+
+% Export loss values
+drawnow; % Update figure immediately
+if gcf().Children(10).YLabel.String == "Function value"
+    len = length(gcf().Children(10).Children.YData);
+    loss(1:len,1) = gcf().Children(10).Children.YData;
+end
 
 % Prep and run combinatorial optimization
 aux = {data2.W; data2.objective(ut.stackW(data2.W)); data3.objective(ut.stackW(data2.W))};
 
 final_W = cell(1,2);
 for mm = M
-    final_W{mm} = data2.W{mm} * W{mm}; % data2.W is 12x12, W is 12x20k
+    final_W{mm} = data2.W{mm} * W{mm};
 end
 data1.objective(ut.stackW(final_W));
 
 if exist('A','var')
-    isi(1) = data1.MISI(A)
+    isi(1) = data1.MISI({A, Sgt})
 end
 
-for ct = 2:num_iter+1
-    data2.combinatorial_optim()
-    optprob = ut.getop(ut.stackW(data2.W), f, c, barr, {'lbfgs' m}, Tol);
-    [wout,fval,exitflag,output] = fmincon(optprob);
-    
-    aux(:,ct) = {data2.W; data2.objective_(); data3.objective(ut.stackW(data2.W))};
+aux{end+1}=data1.Y;
 
-    final_W = cell(1,2);
-    for mm = M
-        final_W{mm} = data2.W{mm} * W{mm}; % data2.W is 12x12, data1.W is 12x20k
-    end
-    data1.objective(ut.stackW(final_W))
-    if exist('A','var')
-        isi(ct) = data1.MISI(A)
+if run_optim
+    for ct = 2:num_iter+1
+        data2.combinatorial_optim()
+        optprob = ut.getop(ut.stackW(data2.W), f, c, barr, {'lbfgs' m}, Tol);
+        [wout,fval,exitflag,output] = fmincon(optprob);
+
+        % Export loss values
+        drawnow; % Update figure immediately
+        if gcf().Children(10).YLabel.String == "Function value"
+            len = length(gcf().Children(10).Children.YData);
+            loss(1:len,ct) = gcf().Children(10).Children.YData;
+        end
+
+        aux(1:end-1,ct) = {data2.W; data2.objective_(); data3.objective(ut.stackW(data2.W))};
+
+        final_W = cell(1,2);
+        for mm = M
+            final_W{mm} = data2.W{mm} * W{mm};
+        end
+        data1.objective(ut.stackW(final_W))
+        if exist('A','var')
+            isi(ct) = data1.MISI({A, Sgt})
+        end
+
+        aux(end,ct) = {data1.Y};
     end
 end
+
 [~, ix] = min([aux{2,:}]);
 
 final_W = cell(1,2);
 for mm = M
-    final_W{mm} = aux{1,ix}{mm} * W{mm}; % data2.W is 12x12, data1.W is 12x20k
+    final_W{mm} = aux{1,ix}{mm} * W{mm};
 end
 data1.objective(ut.stackW(final_W));
 

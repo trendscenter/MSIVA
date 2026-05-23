@@ -29,16 +29,20 @@ load '/Users/xli77/Dropbox (GaTech)/MISA/results/SIVA/fixedSubspace/mask/MNI152_
 %% 2. Set some defaults that will affect the appearance of the image
 %--------------------------------------------------------------------------
 
-ver = 5;
+version = 5;
 
-v5d = load(['v',num2str(ver),'/delta2p/delta2p_geomedian_sMRI_3d.mat']).v3d;
-absmax = max(abs(squeeze(v5d(:)))); 
-
-%%
+% get global max value
+absmax = 0;
 for ss = 1:14
-    % for bin = 1:8
-        % for m = 1:2
+    v3d = load(['v',num2str(version),'/delta2p/delta2p_std_predictor',num2str(ss),'_sMRI_3d.mat']).v3d;
+    tmp = max(abs(squeeze(v3d(:))));
+    if tmp > absmax
+        absmax = tmp;
+    end
+end
 
+for ss = 1:14
+        
         m=1;
 
         F = figure('Color', 'w', 'Position', [10 10 1000 150]);
@@ -48,8 +52,7 @@ for ss = 1:14
         total = 8;
         t = tiledlayout(1,total,'TileSpacing','none','Padding','tight');
 
-        % v3d = squeeze(v5d(ss,bin,:,:,:));
-        v3d = squeeze(v5d(ss,:,:,:));
+        v3d = load(['v',num2str(version),'/delta2p/delta2p_std_predictor',num2str(ss),'_sMRI_3d.mat']).v3d;
         % absmax = max(abs(squeeze(v3d(:))));
 
         % Set the Min/Max values for hue coding
@@ -60,11 +63,11 @@ for ss = 1:14
             Underlay = Underlay(:,end:-1:1)';
             v = v3d(:,:,slice);
             spatial_map = v(:,end:-1:1)';
-
+            
             % flip L and R
             Underlay = Underlay(:,end:-1:1);
             spatial_map = spatial_map(:,end:-1:1);
-
+            
             background_mask=1-logical(Underlay>0);
             background_mask_rgb = zeros(73, 61, 3);
             for ind = 1:3
@@ -112,18 +115,17 @@ for ss = 1:14
             layer2 = image(O_RGB); %axis image
 
             % Use the T-statistics to create an alpha map (which must be in [0,1])
-
+            
             alphamap = abs(spatial_map);
             alphamap(alphamap > A_range(2)) = A_range(2);
             alphamap(alphamap < A_range(1)) = 0;
             alphamap = alphamap/A_range(2);
-            % alphamap = 1 - alphamap/A_range(2); % p-value
 
             % Adjust the alpha values of the overlay
             set(layer2, 'alphaData', alphamap);
 
             % Add some (black) contours to annotate nominal significance
-            %             hold on;
+%             hold on;
             % [C, CH] = contour(Pmap_N_S, 1, 'k');
             % set(gca, 'visible', 'off');
             % set(findall(gca, 'type', 'text'), 'visible', 'on');
@@ -139,7 +141,7 @@ for ss = 1:14
         %         set(gcf,'Color',[0 0 0]); % RGB values [0 0 0] indicates black color
         set(gcf,'Color',[1 1 1]); % RGB values [1 1 1] indicates white color
 
-        exportgraphics(t,['/Users/xli77/Dropbox (GaTech)/MISA-pytorch/figures/SIVA/v',num2str(ver),'/delta2p_geomedian_map/delta2p_geomedian_predictor',num2str(ss),'.png'],'BackgroundColor','w');%'_bin',num2str(bin),
+        exportgraphics(t,['/Users/xli77/Dropbox (GaTech)/MISA-pytorch/figures/SIVA/v',num2str(version),'/delta2p_std_map/delta2p_std_predictor',num2str(ss),'.png'],'BackgroundColor','w')
         %--------------------------------------------------------------------------
 
         %% 4. Create a 2D colorbar for the dual-coded overlay
@@ -153,31 +155,28 @@ for ss = 1:14
         [X,Y] = meshgrid(x,y); % Transform into a 2D matrix
         imagesc(x,y,Y); axis xy; % Plot the colorbar
         %         set(gca, 'Xcolor', 'w', 'Ycolor', 'w')
-        %         set(gca, 'Xcolor', 'w', 'Ycolor', 'k', 'FontSize', 17)
+%         set(gca, 'Xcolor', 'w', 'Ycolor', 'k', 'FontSize', 17)
         set(gca, 'Xcolor', 'k', 'Ycolor', 'k', 'FontSize', 12)
         set(gca, 'YAxisLocation', 'right');
         set(gca,'yticklabel',num2str(get(gca,'ytick')','%0.2f'));
         colormap(CM_over);
 
-        %                 hcb = colorbar;
-        %                 tix = hcb.Ticks;                                            % Get Tick Values
-        %                 hcb.TickLabels = compose('%0.2f',tix);                      % Set Tick Labels
-        %
-        alpha(X);
-        alpha('scaled');
-        xlabel(alpha_label,'FontSize',10)
-        ylabel(hue_label)
+%                 hcb = colorbar;
+%                 tix = hcb.Ticks;                                            % Get Tick Values
+%                 hcb.TickLabels = compose('%0.2f',tix);                      % Set Tick Labels
+% 
+                alpha(X);
+                alpha('scaled');
+                xlabel(alpha_label,'FontSize',10)
+                ylabel(hue_label)
 
         set(gcf,'InvertHardcopy','off');
-        %         set(gcf,'Color',[0 0 0]); % RGB values [0 0 0] indicates black color
+%         set(gcf,'Color',[0 0 0]); % RGB values [0 0 0] indicates black color
         set(gcf,'Color',[1 1 1]); % RGB values [1 1 1] indicates white color
 
-        saveas(gcf,['/Users/xli77/Dropbox (GaTech)/MISA-pytorch/figures/SIVA/v',num2str(ver),'/delta2p_geomedian_map/colorbar_delta2p_geomedian_predictor',num2str(ss),'.png']);%'_bin',num2str(bin),
+        saveas(gcf,['/Users/xli77/Dropbox (GaTech)/MISA-pytorch/figures/SIVA/v',num2str(version),'/delta2p_std_map/colorbar_delta2p_std_predictor',num2str(ss),'.png'])
 
-        %     end
-    % end
 end
 
 close all;
-
 %--------------------------------------------------------------------------

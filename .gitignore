@@ -143,5 +143,5 @@ dmypy.json
 *.zip
 *.mat
 *.pptx
-
+*.nii.gz
 .DS_Store

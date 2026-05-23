@@ -9,7 +9,7 @@ if strcmpi(param,'eta')
         eta = eta(1).*ones(length(O.nes),1);%ones(size(O.S{O.M(1)},1),1);
     end
     min_val = (2-sum([O.S{O.M}],2))./2;
-    if any(eta(O.nes) <= min_val(O.nes)), error('All eta parameters should be lagerer than (2-d)/2.'); end
+    if any(eta(O.nes) <= min_val(O.nes)), error('All eta parameters should be larger than (2-d)/2.'); end
     O.eta = eta;                  % Kotz eta parameter
     
     return

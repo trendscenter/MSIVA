@@ -35,7 +35,7 @@ classdef MISAK < handle
             if ~isempty(lambda)
                 if any(lambda(Smask) <= 0), error('All lambda parameters should be positive.'); end
             end
-            if any(eta(Smask) <= ((2-Sfull(Smask))./2)), error('All eta parameters should be lagerer than (2-d)/2.'); end
+            if any(eta(Smask) <= ((2-Sfull(Smask))./2)), error('All eta parameters should be larger than (2-d)/2.'); end
             nu = (2*eta + Sfull - 2)./(2*beta);
             if any(nu(Smask) <= 0), error('All nu parameter derived from eta and d should be positive.'); end
             

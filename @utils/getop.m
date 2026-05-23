@@ -39,9 +39,8 @@ optprob.options.MaxFunEvals = 50000;
 optprob.options.MaxIter = 150;
 % optprob.options.ObjectiveLimit = 0;
 % optprob.options.Diagnostics = 'on';
-% optprob.options.Display = 'iter-detailed';
-% optprob.options.PlotFcns = {@optimplotconstrviolation @optimplotstepsize @optimplotfirstorderopt};
-% optprob.options.PlotFcns = {myplot @optimplotconstrviolation @optimplotstepsize @optimplotfirstorderopt};
-
+optprob.options.Display = 'iter-detailed';
+optprob.options.PlotFcns = {@optimplotconstrviolation @optimplotstepsize @optimplotfirstorderopt};
+optprob.options.PlotFcns = {myplot @optimplotconstrviolation @optimplotstepsize @optimplotfirstorderopt};
 
 end

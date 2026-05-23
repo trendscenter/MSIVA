@@ -2,10 +2,11 @@
 addpath("/data/users4/xli/MSIVA/FSLNets");
 
 % Load variables
-ver = 4;
-A = load("/data/users4/xli/MSIVA/mat/A_ukb.mat").A;
+version = 4;
+root_dir = "/data/users4/xli/MSIVA/MSIVA/results/mat/";
+A = load([root_dir, 'A_ukb.mat']).A;
 A_msiva_s2 = squeeze(A(2,2,:,:,:));
-Y_msiva_s2 = load("/data/users4/xli/MSIVA/mat/ummm_neuroimaging_Y.mat").Y2;
+Y_msiva_s2 = load([root_dir, 'ummm_neuroimaging_Y.mat']).Y2;
 
 [n_modality, ~, n_subject] = size(Y_msiva_s2);
 [~, n_voxel, ~] = size(A_msiva_s2);
@@ -29,9 +30,9 @@ end
 
 AY = cat(3,ay{:});
 
-load("/data/users4/xli/MSIVA/mat/UKB_MMIVA_C30_preregSite_SMRI_MancovanOuts_wX_FINAL.mat");
-load("/data/users4/xli/MSIVA/mat/UKB_MMIVA_C30_preregSite_ALFF_MancovanOuts_wX_FINAL.mat");
-load("/data/users4/xli/MSIVA/mat/UKB_MMIVA_C30_preregSite_DMRI_MancovanOuts_wX_FINAL.mat");
+load([root_dir, 'UKB_MMIVA_C30_preregSite_SMRI_MancovanOuts_wX_FINAL.mat']);
+load([root_dir, 'UKB_MMIVA_C30_preregSite_ALFF_MancovanOuts_wX_FINAL.mat']);
+load([root_dir, 'UKB_MMIVA_C30_preregSite_DMRI_MancovanOuts_wX_FINAL.mat']);
 
 ageCol=find(strcmp('age_when_attended_assessment_centre_f21003_2_0',MODELUKB0s_ful.names));
 age = MODELUKB0s_ful.X(:,ageCol);
@@ -119,19 +120,19 @@ delta2 = cat(3,delta2_{:});
 delta2p = cat(3,delta2p_{:});
 beta1 = cat(2,beta1_{:});
 
-save(['mat/v',num2str(ver),'/delta2p_raw/predictor_sMRI.mat'], 'predictor', '-v7.3');
-save(['mat/v',num2str(ver),'/delta2p/tpvalue_sMRI.mat'], 'tpvalue', '-v7.3');
-save(['mat/v',num2str(ver),'/delta2p_raw/delta2_sMRI.mat'], 'delta2', '-v7.3');
-save(['mat/v',num2str(ver),'/delta2p_raw/delta2p_sMRI.mat'], 'delta2p', '-v7.3');
-save(['mat/v',num2str(ver),'/delta2p/beta1_sMRI.mat'], 'beta1', '-v7.3');
+save([root_dir,'v',num2str(version),'/delta2p_raw/predictor_sMRI.mat'], 'predictor', '-v7.3');
+save([root_dir,'v',num2str(version),'/delta2p/tpvalue_sMRI.mat'], 'tpvalue', '-v7.3');
+save([root_dir,'v',num2str(version),'/delta2p_raw/delta2_sMRI.mat'], 'delta2', '-v7.3');
+save([root_dir,'v',num2str(version),'/delta2p_raw/delta2p_sMRI.mat'], 'delta2p', '-v7.3');
+save([root_dir,'v',num2str(version),'/delta2p/beta1_sMRI.mat'], 'beta1', '-v7.3');
 
 for s = 1:14 % per predictor
     delta2p_subspace = squeeze(delta2p(:,s,:));
     delta2p_mean = squeeze(mean(delta2p_subspace, 1));
     delta2p_median = squeeze(median(delta2p_subspace, 1));
     delta2p_std = squeeze(std(delta2p_subspace, [], 1));
-    save(['mat/v',num2str(ver),'/delta2p_raw/delta2p_predictor',num2str(s),'_sMRI.mat'], 'delta2p', '-v7.3');
-    save(['mat/v',num2str(ver),'/delta2p/delta2p_mean_predictor',num2str(s),'_sMRI.mat'], 'delta2p_mean', '-v7.3');
-    save(['mat/v',num2str(ver),'/delta2p/delta2p_median_predictor',num2str(s),'_sMRI.mat'], 'delta2p_median', '-v7.3');
-    save(['mat/v',num2str(ver),'/delta2p/delta2p_std_predictor',num2str(s),'_sMRI.mat'], 'delta2p_std', '-v7.3');
+    save([root_dir,'v',num2str(version),'/delta2p_raw/delta2p_predictor',num2str(s),'_sMRI.mat'], 'delta2p', '-v7.3');
+    save([root_dir,'v',num2str(version),'/delta2p/delta2p_mean_predictor',num2str(s),'_sMRI.mat'], 'delta2p_mean', '-v7.3');
+    save([root_dir,'v',num2str(version),'/delta2p/delta2p_median_predictor',num2str(s),'_sMRI.mat'], 'delta2p_median', '-v7.3');
+    save([root_dir,'v',num2str(version),'/delta2p/delta2p_std_predictor',num2str(s),'_sMRI.mat'], 'delta2p_std', '-v7.3');
 end
